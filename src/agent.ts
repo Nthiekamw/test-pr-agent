@@ -3,7 +3,7 @@ import { Octokit } from "@octokit/rest";
 import { makeTools } from "./tools.js";
 
 // IA gratuite : Gemini (Google AI Studio) via l'interface compatible OpenAI.
-const MODEL = process.env.MODEL ?? "gemini-flash-latest";
+const MODEL = process.env.MODEL ?? "gemini-flash-lite-latest";
 const MAX_STEPS = 12;             // limite de tours : évite les boucles infinies
 const MAX_TOKENS_TOTAL = 60_000;  // budget : évite de dépasser le quota gratuit
 
@@ -13,6 +13,8 @@ const pr = Number(process.env.PR_NUMBER);
 const client = new OpenAI({
   apiKey: process.env.GEMINI_API_KEY,
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  timeout: 60_000, // un appel qui dépasse 60 s est coupé
+  maxRetries: 1,
 });
 const gh = new Octokit({ auth: process.env.GITHUB_TOKEN });
 const tools = makeTools(gh, owner, repo, pr);
@@ -68,12 +70,13 @@ async function main() {
   let totalTokens = 0;
 
   for (let step = 1; step <= MAX_STEPS; step++) {
+    const t0 = Date.now();
     const res = await client.chat.completions.create({
-      model: MODEL, messages, tools: toolDefs, tool_choice: "auto",
+      model: MODEL, messages, tools: toolDefs, tool_choice: "auto", reasoning_effort: "low",
     });
     totalTokens += res.usage?.total_tokens ?? 0;
     const msg = res.choices[0].message;
-    log("step", { step, finish: res.choices[0].finish_reason, totalTokens });
+    log("step", { step, finish: res.choices[0].finish_reason, totalTokens, ms: Date.now() - t0 });
 
     if (totalTokens > MAX_TOKENS_TOTAL) return escalate("budget de tokens dépassé");
     messages.push(msg); // on renvoie le message tel quel (nécessaire pour Gemini)
