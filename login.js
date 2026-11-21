@@ -6,3 +6,4 @@ app.get("/average", (req, res) => {
   const count = Number(req.query.count);
   res.send(String(total / count));
 });
+// test 2
