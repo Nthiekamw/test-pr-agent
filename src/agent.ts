@@ -4,7 +4,7 @@ import { makeTools } from "./tools.js";
 
 // IA gratuite : Gemini (Google AI Studio) via l'interface compatible OpenAI.
 const MODEL = process.env.MODEL ?? "gemini-flash-lite-latest";
-const MAX_STEPS = 2;              // limite de tours : évite les boucles infinies
+const MAX_STEPS = 12;              // limite de tours : évite les boucles infinies
 const MAX_TOKENS_TOTAL = 60_000;  // budget : évite de dépasser le quota gratuit
 
 const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
